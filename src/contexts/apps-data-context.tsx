@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { apiClient, ApiError } from '@/lib/api-client';
+import { ApiError } from '@/lib/api-client';
+import { useApiClient } from '@/lib/use-api-client';
 import type { AppWithFavoriteStatus } from '@/api-types';
 import { appEvents } from '@/lib/app-events';
 import type { AppEvent, AppDeletedEvent, AppUpdatedEvent } from '@/lib/app-events';
@@ -36,6 +37,7 @@ interface AppsDataProviderProps {
 
 export function AppsDataProvider({ children }: AppsDataProviderProps) {
   const { user } = useUser();
+  const apiClient = useApiClient();
   
   const [state, setState] = useState<AppsDataState>({
     allApps: [],

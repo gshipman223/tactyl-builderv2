@@ -1150,3 +1150,18 @@ export const apiClient = new ApiClient();
 
 // Export class for testing/custom instances
 export { ApiClient };
+
+// Helper function to get Clerk-aware API client in React components
+let clerkApiClientInstance: ApiClient | null = null;
+export function getClerkAwareApiClient(getToken?: () => Promise<string | null>): ApiClient {
+  if (!clerkApiClientInstance) {
+    clerkApiClientInstance = new ApiClient();
+  }
+  
+  // If we have a getToken function from Clerk, store it for later use
+  if (getToken && clerkApiClientInstance) {
+    (clerkApiClientInstance as any).__clerkGetToken = getToken;
+  }
+  
+  return clerkApiClientInstance;
+}
