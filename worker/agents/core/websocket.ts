@@ -233,8 +233,9 @@ export function handleWebSocketMessage(agent: SimpleCodeGeneratorAgent, connecti
     }
 }
 
-export function handleWebSocketClose(connection: Connection): void {
+export function handleWebSocketClose(agent: SimpleCodeGeneratorAgent, connection: Connection): void {
     logger.info(`WebSocket connection closed: ${connection.id}`);
+    // Add any cleanup logic here if needed
 }
 
 export function broadcastToConnections<T extends WebSocketMessageType>(

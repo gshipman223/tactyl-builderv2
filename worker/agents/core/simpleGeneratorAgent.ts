@@ -1923,7 +1923,28 @@ export class SimpleCodeGeneratorAgent extends Agent<Env, CodeGenState> {
     }
 
     async onClose(connection: Connection): Promise<void> {
-        handleWebSocketClose(connection);
+        handleWebSocketClose(this, connection);
+        this.logger().info(`WebSocket connection closed: ${connection.id}`);
+    }
+
+    /**
+     * Get all active WebSocket connections
+     * Required by broadcastToConnections function
+     */
+    getWebSockets(): WebSocket[] {
+        // The Agent SDK manages WebSocket connections internally
+        // Convert Agent SDK connections to WebSocket format
+        try {
+            // Try to use the parent class's WebSocket management if available
+            if ('getWebSockets' in super) {
+                return (super as any).getWebSockets();
+            }
+        } catch (error) {
+            this.logger().debug('Parent class does not have getWebSockets method');
+        }
+        
+        // Fallback: return empty array
+        return [];
     }
 
     public broadcast<T extends WebSocketMessageType>(type: T, data: WebSocketMessageData<T>): void;
@@ -1933,15 +1954,31 @@ export class SimpleCodeGeneratorAgent extends Agent<Env, CodeGenState> {
         typeOrMsg: WebSocketMessageType | string | ArrayBuffer | ArrayBufferView<ArrayBufferLike>, 
         dataOrWithout?: WebSocketMessageData<WebSocketMessageType> | unknown
     ): void {
-        // // Send the event to the conversational assistant if its a relevant event
-        // if (this.operations.processUserMessage.isProjectUpdateType(typeOrMsg)) {
-        //     const messages = this.operations.processUserMessage.processProjectUpdates(typeOrMsg, dataOrWithout as WebSocketMessageData<WebSocketMessageType>, this.logger());
-        //     this.setState({
-        //         ...this.state,
-        //         conversationMessages: [...this.state.conversationMessages, ...messages]
-        //     });
-        // }
-        broadcastToConnections(this, typeOrMsg as WebSocketMessageType, dataOrWithout as WebSocketMessageData<WebSocketMessageType>);
+        // Check if this is a typed message
+        if (typeof typeOrMsg === 'string' && dataOrWithout && typeof dataOrWithout === 'object') {
+            // This is a typed message, create the full message object
+            const message: WebSocketMessage = {
+                type: typeOrMsg as WebSocketMessageType,
+                ...dataOrWithout
+            };
+            
+            // Try to use the parent class's broadcast method if available
+            try {
+                // The Agent SDK provides a broadcast method that sends to all connections
+                super.broadcast(JSON.stringify(message));
+            } catch (error) {
+                this.logger().error('Error broadcasting message via parent class', error);
+                // Fallback to manual broadcast
+                broadcastToConnections(this, typeOrMsg as WebSocketMessageType, dataOrWithout as WebSocketMessageData<WebSocketMessageType>);
+            }
+        } else {
+            // This is a raw message, send as-is
+            try {
+                super.broadcast(typeOrMsg as string | ArrayBuffer | ArrayBufferView<ArrayBufferLike>, dataOrWithout as string[]);
+            } catch (error) {
+                this.logger().error('Error broadcasting raw message', error);
+            }
+        }
     }
 
     /**
@@ -1957,8 +1994,57 @@ export class SimpleCodeGeneratorAgent extends Agent<Env, CodeGenState> {
             return this.handleWebhook(request);
         }
 
-        // Delegate to parent class for other requests
+        // Delegate to parent class for other requests (including WebSocket)
         return super.fetch(request);
+    }
+
+    /**
+     * Override onRequest to handle WebSocket messages
+     * This is called by the Agent SDK when messages are received
+     */
+    async onRequest(request: Request): Promise<Response> {
+        // Check if this is a WebSocket upgrade
+        const upgradeHeader = request.headers.get('Upgrade');
+        if (upgradeHeader === 'websocket') {
+            this.logger().info('WebSocket upgrade request received');
+            // The base Agent class should handle the WebSocket upgrade
+            // We just need to ensure our onMessage handler is ready
+            return super.onRequest(request);
+        }
+        
+        // For non-WebSocket requests, delegate to parent
+        return super.onRequest(request);
+    }
+
+    /**
+     * Handle incoming WebSocket messages
+     * This is called by the Agent SDK when a message is received
+     */
+    async onMessage(connection: Connection, message: string): Promise<void> {
+        try {
+            this.logger().info(`Received WebSocket message from ${connection.id}`);
+            handleWebSocketMessage(this, connection, message);
+        } catch (error) {
+            this.logger().error('Error handling WebSocket message', error);
+            connection.send(JSON.stringify({
+                type: WebSocketMessageResponses.ERROR,
+                error: `Error processing message: ${error instanceof Error ? error.message : String(error)}`
+            }));
+        }
+    }
+
+    /**
+     * Handle WebSocket connection open
+     * This is called when a new WebSocket connection is established
+     */
+    async onConnect(connection: Connection): Promise<void> {
+        this.logger().info(`WebSocket connection established: ${connection.id}`);
+        
+        // Send initial connection message
+        connection.send(JSON.stringify({
+            type: WebSocketMessageResponses.CONNECTION_ESTABLISHED,
+            message: 'WebSocket connection established'
+        }));
     }
 
     /**
