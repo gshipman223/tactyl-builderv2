@@ -181,12 +181,13 @@ export function AppsDataProvider({ children }: AppsDataProviderProps) {
     ]);
   }, [user, fetchAllApps, fetchFavoriteApps]);
 
-  // Initial data load with parallel fetching - wait for user to be loaded
+  // Initial data load with parallel fetching - wait for user to be loaded AND signed in
   useEffect(() => {
-    if (isUserLoaded) {
+    // Only fetch data when Clerk is loaded and we know the user's sign-in state
+    if (isUserLoaded && user) {
       fetchAll();
     }
-  }, [isUserLoaded, fetchAll]);
+  }, [isUserLoaded, user, fetchAll]);
 
   // Event handlers for real-time updates
   useEffect(() => {
