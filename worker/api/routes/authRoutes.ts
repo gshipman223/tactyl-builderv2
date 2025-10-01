@@ -1,45 +1,30 @@
 /**
- * Authentication Routes
+ * Authentication Routes - Simplified for Clerk
  */
-import { AuthController } from '../controllers/auth/controller';
+import { ClerkAuthController } from '../controllers/auth/clerkController';
 import { Hono } from 'hono';
 import { AppEnv } from '../../types/appenv';
 import { adaptController } from '../honoAdapter';
 import { AuthConfig, setAuthLevel } from '../../middleware/auth/routeAuth';
 
 /**
- * Setup authentication routes
+ * Setup authentication routes for Clerk integration
  */
 export function setupAuthRoutes(app: Hono<AppEnv>): void {
     // Create a sub-router for auth routes
     const authRouter = new Hono<AppEnv>();
     
-    // Public authentication routes
-    authRouter.get('/csrf-token', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.getCsrfToken));
-    authRouter.get('/providers', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.getAuthProviders));
-    authRouter.post('/register', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.register));
-    authRouter.post('/login', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.login));
-    authRouter.post('/verify-email', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.verifyEmail));
-    authRouter.post('/resend-verification', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.resendVerificationOtp));
-    authRouter.get('/check', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.checkAuth));
+    // CSRF token endpoint (still needed for state-changing requests)
+    authRouter.get('/csrf-token', setAuthLevel(AuthConfig.public), adaptController(ClerkAuthController, ClerkAuthController.getCsrfToken));
     
-    // Protected routes (require authentication) - must come before dynamic OAuth routes
-    authRouter.get('/profile', setAuthLevel(AuthConfig.authenticated), adaptController(AuthController, AuthController.getProfile));
-    authRouter.put('/profile', setAuthLevel(AuthConfig.authenticated), adaptController(AuthController, AuthController.updateProfile));
-    authRouter.post('/logout', setAuthLevel(AuthConfig.authenticated), adaptController(AuthController, AuthController.logout));
+    // Check authentication status
+    authRouter.get('/check', setAuthLevel(AuthConfig.public), adaptController(ClerkAuthController, ClerkAuthController.checkAuth));
     
-    // Session management routes
-    authRouter.get('/sessions', setAuthLevel(AuthConfig.authenticated), adaptController(AuthController, AuthController.getActiveSessions));
-    authRouter.delete('/sessions/:sessionId', setAuthLevel(AuthConfig.authenticated), adaptController(AuthController, AuthController.revokeSession));
+    // Get user profile (from Clerk JWT)
+    authRouter.get('/profile', setAuthLevel(AuthConfig.authenticated), adaptController(ClerkAuthController, ClerkAuthController.getProfile));
     
-    // // API Keys management routes
-    // authRouter.get('/api-keys', createHandler('getApiKeys'), AuthConfig.authenticated);
-    // authRouter.post('/api-keys', createHandler('createApiKey'), AuthConfig.authenticated);
-    // authRouter.delete('/api-keys/:keyId', createHandler('revokeApiKey'), AuthConfig.authenticated);
-    
-    // OAuth routes (under /oauth path to avoid conflicts)
-    authRouter.get('/oauth/:provider', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.initiateOAuth));
-    authRouter.get('/callback/:provider', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.handleOAuthCallback));
+    // Clerk webhook endpoint for syncing user data
+    authRouter.post('/webhook/clerk', setAuthLevel(AuthConfig.public), adaptController(ClerkAuthController, ClerkAuthController.handleClerkWebhook));
     
     // Mount the auth router under /api/auth
     app.route('/api/auth', authRouter);

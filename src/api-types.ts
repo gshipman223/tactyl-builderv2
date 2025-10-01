@@ -3,7 +3,6 @@
  * This file serves as the single source of truth for frontend-worker API communication
  */
 import { SessionResponse } from 'worker/utils/authUtils';
-import { AuthUser } from './api-types';
 
 export type { SecretTemplate } from 'worker/types/secretsTemplates';
 
@@ -209,7 +208,7 @@ export type RegisterResponseData = SessionResponse & {
 };
 
 export type ProfileResponseData = {
-  user: AuthUser;
+  user: any; // AuthUser type from the export above
   sessionId: string;
 };
 

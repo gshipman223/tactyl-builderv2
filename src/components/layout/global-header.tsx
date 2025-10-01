@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { AuthButton } from '../auth/auth-button';
+import { ClerkAuthButton } from '../auth/clerk-auth-button';
 import { ThemeToggle } from '../theme-toggle';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/auth-context';
+import { useUser } from '@clerk/clerk-react';
 import { ChevronRight, GithubIcon, AlertCircle } from 'lucide-react';
 import { CloudflareLogo } from '../icons/logos';
 import { usePlatformStatus } from '@/hooks/use-platform-status';
@@ -13,7 +13,7 @@ import { useLocation } from 'react-router';
 import clsx from 'clsx';
 
 export function GlobalHeader() {
-	const { user } = useAuth();
+	const { user } = useUser();
 	const { status } = usePlatformStatus();
 	const [isChangelogOpen, setIsChangelogOpen] = useState(false);
 	const hasMaintenanceMessage = Boolean(status.hasActiveMessage && status.globalUserMessage.trim().length > 0);
@@ -107,7 +107,7 @@ export function GlobalHeader() {
 							/>
 						)} */}
 							<ThemeToggle />
-							<AuthButton />
+							<ClerkAuthButton />
 						</motion.div>
 					</div>
 				</div>

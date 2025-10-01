@@ -70,6 +70,11 @@ export async function routeAuthChecks(
     params?: Record<string, string>
 ): Promise<{ success: boolean; response?: Response }> {
     try {
+        // If DISABLE_AUTH is set, bypass all auth checks
+        if (env.DISABLE_AUTH === 'true') {
+            return { success: true };
+        }
+
         // Public routes always pass
         console.log('requirement', requirement, 'for user', user);
         if (requirement.level === 'public') {
