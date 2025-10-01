@@ -1,0 +1,20 @@
+[
+  {
+    "name": "vite-react",
+    "language": "typescript",
+    "frameworks": ["react", "vite"],
+    "description": "A Vite + React template with TypeScript"
+  },
+  {
+    "name": "vanilla-js",
+    "language": "javascript",
+    "frameworks": [],
+    "description": "Vanilla JavaScript template"
+  },
+  {
+    "name": "vite-vue",
+    "language": "typescript",
+    "frameworks": ["vue", "vite"],
+    "description": "A Vite + Vue template with TypeScript"
+  }
+]

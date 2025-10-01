@@ -34,7 +34,6 @@ import {
   } from './sandboxTypes';
   
   import { createObjectLogger, StructuredLogger } from '../../logger';
-  import { env } from 'cloudflare:workers'
   /**
    * Streaming event for enhanced command execution
    */
@@ -80,7 +79,7 @@ import {
      * List all available templates
      * Returns: { success: boolean, templates: [...], count: number, error?: string }
      */
-    static async listTemplates(): Promise<TemplateListResponse> {
+    static async listTemplates(env: Env): Promise<TemplateListResponse> {
         try {
             const response = await env.TEMPLATES_BUCKET.get('template_catalog.json');
             if (response === null) {
