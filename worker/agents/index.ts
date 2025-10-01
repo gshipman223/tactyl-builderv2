@@ -70,7 +70,7 @@ export async function getTemplateForQuery(
                 query,
                 availableTemplates: templatesResponse.templates,
             }), 
-            getSandboxService(sandboxSessionId)
+            getSandboxService(sandboxSessionId, env)
         ]);
         
         logger.info('Selected template', { selectedTemplate: analyzeQueryResponse });

@@ -1,10 +1,9 @@
 import { SandboxSdkClient } from "./sandboxSdkClient";
 import { RemoteSandboxServiceClient } from "./remoteSandboxService";
 import { BaseSandboxService } from "./BaseSandboxService";
-import { env } from 'cloudflare:workers'
 
-export function getSandboxService(sessionId: string): BaseSandboxService {
-    if (env.SANDBOX_SERVICE_TYPE == 'runner') {
+export function getSandboxService(sessionId: string, env?: Env): BaseSandboxService {
+    if (env?.SANDBOX_SERVICE_TYPE == 'runner') {
         console.log("[getSandboxService] Using runner service for sandboxing");
         return new RemoteSandboxServiceClient(sessionId);
     }
