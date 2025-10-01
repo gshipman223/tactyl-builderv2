@@ -25,6 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/auth-context';
+import { useUser } from '@clerk/clerk-react';
 // import { useTheme } from '@/contexts/theme-context';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -66,6 +67,7 @@ import CloudflareLogo from '@/assets/provider-logos/cloudflare.svg?react';
 
 export default function SettingsPage() {
 	const { user } = useAuth();
+	const { isLoaded: isUserLoaded } = useUser();
 	// Active sessions state
 	const [activeSessions, setActiveSessions] = useState<
 		ActiveSessionsData & { loading: boolean }
@@ -484,33 +486,36 @@ export default function SettingsPage() {
 
 	// Load agent configurations dynamically from API
 	React.useEffect(() => {
-		apiClient
-			.getModelDefaults()
-			.then((response) => {
-				if (response.success && response.data?.defaults) {
-					const configs = Object.keys(response.data.defaults).map(
-						(key) => ({
-							key,
-							name: formatAgentConfigName(key),
-							description: getAgentConfigDescription(key),
-						}),
-					);
-					setAgentConfigs(configs);
-				}
-			})
-			.catch((error) => {
-				console.error('Failed to load agent configurations:', error);
-			});
-	}, [formatAgentConfigName, getAgentConfigDescription]);
+		// Only load defaults when user is authenticated
+		if (isUserLoaded && user) {
+			apiClient
+				.getModelDefaults()
+				.then((response) => {
+					if (response.success && response.data?.defaults) {
+						const configs = Object.keys(response.data.defaults).map(
+							(key) => ({
+								key,
+								name: formatAgentConfigName(key),
+								description: getAgentConfigDescription(key),
+							}),
+						);
+						setAgentConfigs(configs);
+					}
+				})
+				.catch((error) => {
+					console.error('Failed to load agent configurations:', error);
+				});
+		}
+	}, [isUserLoaded, user, formatAgentConfigName, getAgentConfigDescription]);
 
 	// Load GitHub integration, sessions, API keys, user secrets, and model configs on component mount
 	React.useEffect(() => {
-		if (user) {
+		if (isUserLoaded && user) {
 			loadActiveSessions();
 			loadModelConfigs();
             loadSecretTemplates();
 		}
-	}, [user]);
+	}, [isUserLoaded, user]);
 
 	return (
 		<div className="min-h-screen bg-bg-3 relative">
