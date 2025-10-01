@@ -1988,6 +1988,13 @@ export class SimpleCodeGeneratorAgent extends Agent<Env, CodeGenState> {
     async fetch(request: Request): Promise<Response> {
         const url = new URL(request.url);
         const pathname = url.pathname;
+        
+        this.logger().info('SimpleCodeGeneratorAgent.fetch called', {
+            url: request.url,
+            method: request.method,
+            upgrade: request.headers.get('Upgrade'),
+            pathname
+        });
 
         // Handle internal webhook requests
         if (pathname.startsWith('/webhook/')) {
@@ -1995,7 +2002,17 @@ export class SimpleCodeGeneratorAgent extends Agent<Env, CodeGenState> {
         }
 
         // Delegate to parent class for other requests (including WebSocket)
-        return super.fetch(request);
+        try {
+            const response = await super.fetch(request);
+            this.logger().info('Parent fetch returned', {
+                status: response.status,
+                statusText: response.statusText
+            });
+            return response;
+        } catch (error) {
+            this.logger().error('Error in parent fetch', error);
+            throw error;
+        }
     }
 
     /**
@@ -2003,13 +2020,29 @@ export class SimpleCodeGeneratorAgent extends Agent<Env, CodeGenState> {
      * This is called by the Agent SDK when messages are received
      */
     async onRequest(request: Request): Promise<Response> {
+        this.logger().info('SimpleCodeGeneratorAgent.onRequest called', {
+            url: request.url,
+            method: request.method,
+            upgrade: request.headers.get('Upgrade')
+        });
+        
         // Check if this is a WebSocket upgrade
         const upgradeHeader = request.headers.get('Upgrade');
         if (upgradeHeader === 'websocket') {
-            this.logger().info('WebSocket upgrade request received');
+            this.logger().info('WebSocket upgrade request received in onRequest');
             // The base Agent class should handle the WebSocket upgrade
             // We just need to ensure our onMessage handler is ready
-            return super.onRequest(request);
+            try {
+                const response = await super.onRequest(request);
+                this.logger().info('Parent onRequest returned for WebSocket', {
+                    status: response.status,
+                    statusText: response.statusText
+                });
+                return response;
+            } catch (error) {
+                this.logger().error('Error in parent onRequest for WebSocket', error);
+                throw error;
+            }
         }
         
         // For non-WebSocket requests, delegate to parent

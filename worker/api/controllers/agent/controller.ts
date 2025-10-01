@@ -215,7 +215,15 @@ export class CodingAgentController extends BaseController {
                 this.logger.info(`Successfully got agent instance for chat: ${chatId}`);
 
                 // Let the agent handle the WebSocket connection directly
-                return agentInstance.fetch(request);
+                const response = await agentInstance.fetch(request);
+                
+                this.logger.info(`Agent fetch returned response:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+                
+                return response;
             } catch (error) {
                 this.logger.error(`Failed to get agent instance with ID ${chatId}:`, error);
                 // Return an appropriate WebSocket error response
