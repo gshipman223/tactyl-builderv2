@@ -69,7 +69,7 @@ export default defineConfig({
 		global: 'globalThis',
 		// '__filename': '""',
 		// '__dirname': '""',
-		'import.meta.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify('pk_test_c3RhYmxlLWtyaWxsLTI1LmNsZXJrLmFjY291bnRzLmRldiQ'),
+		'import.meta.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify('pk_live_Y2xlcmsudGFjdHlsLmNvJA'),
 	},
 
 	worker: {

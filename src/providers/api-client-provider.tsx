@@ -40,24 +40,41 @@ export function ApiClientProvider({ children }: ApiClientProviderProps) {
         
         // Try to get fresh token if Clerk is ready
         const auth = (window as any).__clerkAuth;
+        console.log('ApiClientProvider - Request intercepted:', {
+          endpoint,
+          hasAuth: !!auth,
+          isSignedIn: auth?.isSignedIn,
+          hasGetToken: !!auth?.getToken
+        });
+        
         if (auth?.isSignedIn && auth?.getToken) {
           try {
             const token = await auth.getToken();
-            console.log('ApiClientProvider - Got Clerk token for request:', endpoint, !!token);
+            console.log('ApiClientProvider - Token retrieved:', {
+              endpoint,
+              hasToken: !!token,
+              tokenLength: token?.length
+            });
+            
             if (token) {
               // Ensure headers object exists
               if (!options.headers) {
                 options.headers = {};
               }
               options.headers['Authorization'] = `Bearer ${token}`;
+              console.log('ApiClientProvider - Authorization header added');
+            } else {
+              console.warn('ApiClientProvider - getToken returned null/undefined');
             }
           } catch (error) {
-            console.error('Failed to get Clerk token:', error);
+            console.error('ApiClientProvider - Failed to get Clerk token:', error);
           }
         } else {
-          console.log('ApiClientProvider - No auth available for request:', endpoint, {
-            hasAuth: !!(window as any).__clerkAuth,
-            isSignedIn: (window as any).__clerkAuth?.isSignedIn
+          console.log('ApiClientProvider - Cannot get token:', {
+            hasAuth: !!auth,
+            isSignedIn: auth?.isSignedIn,
+            hasGetToken: !!auth?.getToken,
+            authObject: auth
           });
         }
         
