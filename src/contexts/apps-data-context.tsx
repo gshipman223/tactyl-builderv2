@@ -36,7 +36,7 @@ interface AppsDataProviderProps {
 }
 
 export function AppsDataProvider({ children }: AppsDataProviderProps) {
-  const { user } = useUser();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const apiClient = useApiClient();
   
   const [state, setState] = useState<AppsDataState>({
@@ -181,10 +181,12 @@ export function AppsDataProvider({ children }: AppsDataProviderProps) {
     ]);
   }, [user, fetchAllApps, fetchFavoriteApps]);
 
-  // Initial data load with parallel fetching
+  // Initial data load with parallel fetching - wait for user to be loaded
   useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+    if (isUserLoaded) {
+      fetchAll();
+    }
+  }, [isUserLoaded, fetchAll]);
 
   // Event handlers for real-time updates
   useEffect(() => {

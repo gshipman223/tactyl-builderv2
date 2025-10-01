@@ -18,11 +18,20 @@ export async function authMiddleware(
     env: Env
 ): Promise<AuthUserSession | null> {
     try {
+        // Log the incoming request headers for debugging
+        const authHeader = request.headers.get('Authorization');
+        logger.info('Auth middleware called', {
+            hasAuthHeader: !!authHeader,
+            authHeaderLength: authHeader?.length,
+            url: request.url,
+            method: request.method
+        });
+
         // Use Clerk authentication
         const user = await extractClerkUser(request, env);
         
         if (user) {
-            logger.debug('User authenticated via Clerk', { userId: user.id });
+            logger.info('User authenticated via Clerk', { userId: user.id, email: user.email });
             
             // Create a session object for compatibility
             const session: AuthSession = {
@@ -35,7 +44,7 @@ export async function authMiddleware(
             return { user, sessionId: session.sessionId };
         }
         
-        logger.debug('No authentication found');
+        logger.info('No authentication found in request');
         return null;
     } catch (error) {
         logger.error('Auth middleware error', error);
