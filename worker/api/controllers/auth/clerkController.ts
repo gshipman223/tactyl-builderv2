@@ -27,7 +27,7 @@ export class ClerkAuthController extends BaseController {
         // Create the CSRF cookie directly
         const { createSecureCookie } = await import('../../../utils/authUtils');
         const cookie = createSecureCookie({
-            name: 'csrf',
+            name: 'csrf-token', // Match the name expected by CsrfService
             value: token,
             httpOnly: true,
             secure: true,
