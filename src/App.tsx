@@ -1,44 +1,35 @@
 import { Outlet } from 'react-router';
-import { ClerkAuthProvider } from './contexts/clerk-auth-context';
-import { MockAuthProvider } from './contexts/mock-auth-context';
+import { AuthProvider } from './contexts/auth-context';
 import { ThemeProvider } from './contexts/theme-context';
 import { Toaster } from './components/ui/sonner';
 import { AppLayout } from './components/layout/app-layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ClerkProvider } from '@clerk/clerk-react';
 
-// Use Clerk if publishable key is available, otherwise use mock auth
-const useClerkAuth = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+// Use Clerk if publishable key is available
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 export default function App() {
-  if (useClerkAuth) {
-    return (
-      <ErrorBoundary>
-        <ThemeProvider>
-          <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
-            <ClerkAuthProvider>
-              <AppLayout>
-                <Outlet />
-              </AppLayout>
-              <Toaster richColors position="top-right" />
-            </ClerkAuthProvider>
-          </ClerkProvider>
-        </ThemeProvider>
-      </ErrorBoundary>
-    );
-  }
-
-  // Fallback to mock auth (anonymous user)
-  return (
+  const app = (
     <ErrorBoundary>
       <ThemeProvider>
-        <MockAuthProvider>
+        <AuthProvider>
           <AppLayout>
             <Outlet />
           </AppLayout>
           <Toaster richColors position="top-right" />
-        </MockAuthProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
+
+  if (clerkPubKey) {
+    return (
+      <ClerkProvider publishableKey={clerkPubKey}>
+        {app}
+      </ClerkProvider>
+    );
+  }
+
+  return app;
 }

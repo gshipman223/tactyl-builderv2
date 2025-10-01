@@ -3,7 +3,7 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import type { AppWithFavoriteStatus } from '@/api-types';
 import { appEvents } from '@/lib/app-events';
 import type { AppEvent, AppDeletedEvent, AppUpdatedEvent } from '@/lib/app-events';
-import { useAuth } from '@/contexts/auth-context';
+import { useUser } from '@clerk/clerk-react';
 
 interface AppsDataState {
   allApps: AppWithFavoriteStatus[];
@@ -35,7 +35,7 @@ interface AppsDataProviderProps {
 }
 
 export function AppsDataProvider({ children }: AppsDataProviderProps) {
-  const { user } = useAuth();
+  const { user } = useUser();
   
   const [state, setState] = useState<AppsDataState>({
     allApps: [],
