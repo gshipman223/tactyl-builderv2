@@ -74,8 +74,10 @@ export async function extractClerkUser(request: Request, env: Env): Promise<Auth
   // Check Authorization header first
   const authHeader = request.headers.get('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    return verifyClerkToken(token, env);
+    const token = authHeader.substring(7).trim();
+    if (token && token !== 'undefined' && token !== 'null') {
+      return verifyClerkToken(token, env);
+    }
   }
 
   // Check for __clerk_db_jwt cookie (Clerk's default cookie name)
@@ -86,8 +88,10 @@ export async function extractClerkUser(request: Request, env: Env): Promise<Auth
       .find(c => c.trim().startsWith('__clerk_db_jwt='));
     
     if (clerkCookie) {
-      const token = clerkCookie.split('=')[1];
-      return verifyClerkToken(token, env);
+      const token = clerkCookie.split('=')[1]?.trim();
+      if (token && token !== 'undefined' && token !== 'null') {
+        return verifyClerkToken(token, env);
+      }
     }
   }
 

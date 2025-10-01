@@ -43,11 +43,13 @@ export function ApiClientProvider({ children }: ApiClientProviderProps) {
         console.log('ApiClientProvider - Request intercepted:', {
           endpoint,
           hasAuth: !!auth,
+          isLoaded: auth?.isLoaded,
           isSignedIn: auth?.isSignedIn,
           hasGetToken: !!auth?.getToken
         });
         
-        if (auth?.isSignedIn && auth?.getToken) {
+        // Wait for Clerk to be loaded before trying to get token
+        if (auth?.isLoaded && auth?.isSignedIn && auth?.getToken) {
           try {
             const token = await auth.getToken();
             console.log('ApiClientProvider - Token retrieved:', {
@@ -69,12 +71,14 @@ export function ApiClientProvider({ children }: ApiClientProviderProps) {
           } catch (error) {
             console.error('ApiClientProvider - Failed to get Clerk token:', error);
           }
+        } else if (!auth?.isLoaded) {
+          console.log('ApiClientProvider - Clerk not loaded yet, skipping auth for:', endpoint);
         } else {
           console.log('ApiClientProvider - Cannot get token:', {
             hasAuth: !!auth,
+            isLoaded: auth?.isLoaded,
             isSignedIn: auth?.isSignedIn,
-            hasGetToken: !!auth?.getToken,
-            authObject: auth
+            hasGetToken: !!auth?.getToken
           });
         }
         
