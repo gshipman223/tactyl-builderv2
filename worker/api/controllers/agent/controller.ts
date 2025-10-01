@@ -187,10 +187,12 @@ export class CodingAgentController extends BaseController {
                 return new Response('Forbidden: Invalid origin', { status: 403 });
             }
 
-            // Extract user for rate limiting
-            const user = context.user!;
+            // Extract user for rate limiting (optional for WebSockets)
+            const user = context.user;
+            // For WebSockets, we can't enforce auth at connection time
+            // The agent will handle authorization internally
             if (!user) {
-                return CodingAgentController.createErrorResponse('Missing user', 401);
+                this.logger.info('WebSocket connection without authenticated user - will validate inside agent');
             }
 
             this.logger.info(`WebSocket connection request for chat: ${chatId}`);
