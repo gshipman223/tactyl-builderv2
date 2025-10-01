@@ -36,7 +36,7 @@ interface AppsDataProviderProps {
 }
 
 export function AppsDataProvider({ children }: AppsDataProviderProps) {
-  const { user, isLoaded: isUserLoaded } = useUser();
+  const { user, isLoaded: isUserLoaded, isSignedIn } = useUser();
   const apiClient = useApiClient();
   
   const [state, setState] = useState<AppsDataState>({
@@ -183,11 +183,15 @@ export function AppsDataProvider({ children }: AppsDataProviderProps) {
 
   // Initial data load with parallel fetching - wait for user to be loaded AND signed in
   useEffect(() => {
-    // Only fetch data when Clerk is loaded and we know the user's sign-in state
-    if (isUserLoaded && user) {
-      fetchAll();
+    // Only fetch data when Clerk is loaded and user is actually signed in
+    if (isUserLoaded && isSignedIn && user) {
+      // Small delay to ensure ApiClientProvider has updated
+      const timer = setTimeout(() => {
+        fetchAll();
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [isUserLoaded, user, fetchAll]);
+  }, [isUserLoaded, isSignedIn, user, fetchAll]);
 
   // Event handlers for real-time updates
   useEffect(() => {

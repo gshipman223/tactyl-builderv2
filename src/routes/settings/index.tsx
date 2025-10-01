@@ -67,7 +67,7 @@ import CloudflareLogo from '@/assets/provider-logos/cloudflare.svg?react';
 
 export default function SettingsPage() {
 	const { user } = useAuth();
-	const { isLoaded: isUserLoaded } = useUser();
+	const { isLoaded: isUserLoaded, isSignedIn } = useUser();
 	// Active sessions state
 	const [activeSessions, setActiveSessions] = useState<
 		ActiveSessionsData & { loading: boolean }
@@ -487,7 +487,7 @@ export default function SettingsPage() {
 	// Load agent configurations dynamically from API
 	React.useEffect(() => {
 		// Only load defaults when user is authenticated
-		if (isUserLoaded && user) {
+		if (isUserLoaded && isSignedIn && user) {
 			apiClient
 				.getModelDefaults()
 				.then((response) => {
@@ -506,16 +506,16 @@ export default function SettingsPage() {
 					console.error('Failed to load agent configurations:', error);
 				});
 		}
-	}, [isUserLoaded, user, formatAgentConfigName, getAgentConfigDescription]);
+	}, [isUserLoaded, isSignedIn, user, formatAgentConfigName, getAgentConfigDescription]);
 
 	// Load GitHub integration, sessions, API keys, user secrets, and model configs on component mount
 	React.useEffect(() => {
-		if (isUserLoaded && user) {
+		if (isUserLoaded && isSignedIn && user) {
 			loadActiveSessions();
 			loadModelConfigs();
             loadSecretTemplates();
 		}
-	}, [isUserLoaded, user]);
+	}, [isUserLoaded, isSignedIn, user]);
 
 	return (
 		<div className="min-h-screen bg-bg-3 relative">
