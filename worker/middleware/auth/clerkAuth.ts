@@ -23,18 +23,6 @@ export interface ClerkJWTClaims {
 
 export async function verifyClerkToken(token: string, env: Env): Promise<AuthUser | null> {
   try {
-    // If auth is disabled, return a mock user
-    if (env.DISABLE_AUTH === 'true') {
-      return {
-        id: 'anonymous',
-        email: 'anonymous@tactyl.co',
-        displayName: 'Anonymous User',
-        timezone: 'UTC',
-        provider: 'anonymous',
-        emailVerified: true,
-        createdAt: new Date(),
-      };
-    }
 
     // If no Clerk secret key, disable auth
     if (!env.CLERK_SECRET_KEY) {
@@ -104,7 +92,7 @@ export async function extractClerkUser(request: Request, env: Env): Promise<Auth
   }
 
   // If auth is disabled, return anonymous user
-  if (env.DISABLE_AUTH === 'true' || !env.CLERK_SECRET_KEY) {
+  if (!env.CLERK_SECRET_KEY) {
     return {
       id: 'anonymous',
       email: 'anonymous@tactyl.co',

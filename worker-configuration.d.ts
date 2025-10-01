@@ -5,7 +5,6 @@ declare namespace Cloudflare {
 		VibecoderStore: KVNamespace;
 		TEMPLATES_REPOSITORY: "https://github.com/cloudflare/vibesdk-templates";
 		ALLOWED_EMAIL: "";
-		DISABLE_AUTH?: string;
 		DISPATCH_NAMESPACE: "vibesdk-default-namespace";
 		CLOUDFLARE_AI_GATEWAY: "vibesdk-gateway";
 		ENABLE_READ_REPLICAS: "true";
