@@ -81,12 +81,19 @@ import {
      */
     static async listTemplates(env: Env): Promise<TemplateListResponse> {
         try {
+            console.log('listTemplates: Checking env.TEMPLATES_BUCKET', !!env.TEMPLATES_BUCKET);
+            if (!env.TEMPLATES_BUCKET) {
+                throw new Error('TEMPLATES_BUCKET binding not found in environment');
+            }
+            
             const response = await env.TEMPLATES_BUCKET.get('template_catalog.json');
+            console.log('listTemplates: R2 response', response ? 'found' : 'null');
             if (response === null) {
                 throw new Error(`Failed to fetch template catalog: Template catalog not found`);
             }
             
             const templates = await response.json() as TemplateInfo[];
+            console.log('listTemplates: Parsed templates count', templates.length);
 
             // For now, just filter out *next* templates
             const filteredTemplates = templates.filter(t => !t.name.includes('next'));
@@ -102,6 +109,7 @@ import {
                 count: filteredTemplates.length
             };
         } catch (error) {
+            console.error('listTemplates error:', error);
             return {
                 success: false,
                 templates: [],

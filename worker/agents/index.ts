@@ -4,9 +4,7 @@ import { CodeGenState } from './core/state';
 import { generateId } from '../utils/idGenerator';
 import { StructuredLogger } from '../logger';
 import { InferenceContext } from './inferutils/config.types';
-import { SandboxSdkClient } from '../services/sandbox/sandboxSdkClient';
 import { selectTemplate } from './planning/templateSelector';
-import { getSandboxService } from '../services/sandbox/factory';
 import { TemplateDetails } from '../services/sandbox/sandboxTypes';
 import { TemplateSelection } from './schemas';
 
@@ -55,22 +53,29 @@ export async function getTemplateForQuery(
     query: string,
     logger: StructuredLogger,
 ) : Promise<{sandboxSessionId: string, templateDetails: TemplateDetails, selection: TemplateSelection}> {
-    // Fetch available templates
-    const templatesResponse = await SandboxSdkClient.listTemplates(env);
-    if (!templatesResponse || !templatesResponse.success) {
+    // Directly fetch templates from R2 bucket
+    let templates;
+    try {
+        const response = await env.TEMPLATES_BUCKET.get('template_catalog.json');
+        if (!response) {
+            throw new Error('Template catalog not found in R2 bucket');
+        }
+        templates = await response.json() as any[];
+        logger.info('Fetched templates from R2', { count: templates.length });
+    } catch (error) {
+        logger.error('Failed to fetch templates from R2', { error });
         throw new Error('Failed to fetch templates from sandbox service');
     }
 
     const sandboxSessionId = generateId();
         
-    const [analyzeQueryResponse, sandboxClient] = await Promise.all([
+    const [analyzeQueryResponse] = await Promise.all([
             selectTemplate({
                 env: env,
                 inferenceContext,
                 query,
-                availableTemplates: templatesResponse.templates,
-            }), 
-            getSandboxService(sandboxSessionId, env)
+                availableTemplates: templates,
+            })
         ]);
         
         logger.info('Selected template', { selectedTemplate: analyzeQueryResponse });
@@ -81,18 +86,32 @@ export async function getTemplateForQuery(
             throw new Error('No suitable template found for code generation');
         }
             
-        const selectedTemplate = templatesResponse.templates.find(template => template.name === analyzeQueryResponse.selectedTemplateName);
+        const selectedTemplate = templates.find(template => template.name === analyzeQueryResponse.selectedTemplateName);
         if (!selectedTemplate) {
             logger.error('Selected template not found');
             throw new Error('Selected template not found');
         }
-        // Now fetch all the files from the instance
-        const templateDetailsResponse = await sandboxClient.getTemplateDetails(selectedTemplate.name);
-        if (!templateDetailsResponse.success || !templateDetailsResponse.templateDetails) {
-            logger.error('Failed to fetch files', { templateDetailsResponse });
-            throw new Error('Failed to fetch files');
-        }
-            
-        const templateDetails = templateDetailsResponse.templateDetails;
+        // For now, create a minimal template details object
+        // TODO: Fetch actual template files from GitHub or another source
+        const templateDetails: TemplateDetails = {
+            name: selectedTemplate.name,
+            description: {
+                selection: selectedTemplate.description || 'Template for code generation',
+                usage: `Use this template for ${selectedTemplate.language || 'web'} development`
+            },
+            files: [],
+            fileTree: { 
+                path: '/', 
+                type: 'directory', 
+                children: [] 
+            },
+            language: selectedTemplate.language,
+            frameworks: selectedTemplate.frameworks || [],
+            deps: {},
+            dontTouchFiles: [],
+            redactedFiles: []
+        };
+        
+        logger.info('Using minimal template details', { templateName: selectedTemplate.name });
         return { sandboxSessionId, templateDetails, selection: analyzeQueryResponse };
 }
